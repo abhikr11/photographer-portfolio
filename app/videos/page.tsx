@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ScrollProgress } from "@/components/scroll-progress"
@@ -61,6 +61,10 @@ export default function VideosPage() {
     ? videos
     : videos.filter((v) => v.playlist_id === activePlaylist)
 
+  const activeDescription = activePlaylist === "all"
+    ? "Watch our cinematic films and behind-the-scenes reels."
+    : playlists.find((p) => p.id === activePlaylist)?.description ?? ""
+
   const toVideoCardFormat = (video: DBVideo): VideoCardFormat => ({
     id: video.id,
     title: video.title ?? "Untitled",
@@ -86,28 +90,44 @@ export default function VideosPage() {
 
         {/* Playlist filter */}
         {playlists.length > 0 && (
-          <div className="mb-10 flex flex-wrap justify-center gap-2">
-            <button
-              onClick={() => setActivePlaylist("all")}
-              className={"px-5 py-1.5 text-xs uppercase tracking-widest transition-colors border " +
-                (activePlaylist === "all"
-                  ? "bg-gold text-background border-gold"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30")}
-            >
-              All
-            </button>
-            {playlists.map((playlist) => (
+          <div className="mb-10 flex flex-col items-center gap-4">
+            <div className="flex flex-wrap justify-center gap-2">
               <button
-                key={playlist.id}
-                onClick={() => setActivePlaylist(playlist.id)}
+                onClick={() => setActivePlaylist("all")}
                 className={"px-5 py-1.5 text-xs uppercase tracking-widest transition-colors border " +
-                  (activePlaylist === playlist.id
+                  (activePlaylist === "all"
                     ? "bg-gold text-background border-gold"
                     : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30")}
               >
-                {playlist.name}
+                All
               </button>
-            ))}
+              {playlists.map((playlist) => (
+                <button
+                  key={playlist.id}
+                  onClick={() => setActivePlaylist(playlist.id)}
+                  className={"px-5 py-1.5 text-xs uppercase tracking-widest transition-colors border " +
+                    (activePlaylist === playlist.id
+                      ? "bg-gold text-background border-gold"
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30")}
+                >
+                  {playlist.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Playlist description */}
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={activePlaylist}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.3 }}
+                className="text-center text-sm italic text-muted-foreground max-w-md"
+              >
+                {activeDescription}
+              </motion.p>
+            </AnimatePresence>
           </div>
         )}
 

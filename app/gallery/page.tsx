@@ -9,34 +9,36 @@ import { CategoryFilter } from "@/components/category-filter"
 import { GalleryGrid, type GalleryImage } from "@/components/gallery-grid"
 import { LightboxModal } from "@/components/lightbox-modal"
 
+type Category = {
+  id: string
+  name: string
+  description: string
+}
+
 export default function GalleryPage() {
   const [activeCategory, setActiveCategory] = useState("All")
   const [allPhotos, setAllPhotos] = useState<GalleryImage[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
-  // Fetch all photos once on page load
   useEffect(() => {
-    fetch("/api/photos")
-      .then((res) => res.json())
-      .then((data) => {
-        // Make sure we always set an array
-        setAllPhotos(Array.isArray(data) ? data : [])
+    Promise.all([
+      fetch("/api/photos").then((r) => r.json()),
+      fetch("/api/categories").then((r) => r.json()),
+    ])
+      .then(([photos, cats]) => {
+        setAllPhotos(Array.isArray(photos) ? photos : [])
+        setCategories(Array.isArray(cats) ? cats : [])
         setLoading(false)
       })
-      .catch((err) => {
-        console.error("Failed to fetch photos:", err)
-        setLoading(false)
-      })
+      .catch(() => setLoading(false))
   }, [])
 
-  // Filter photos by active category on the frontend
   const filteredImages = useMemo(() => {
     if (activeCategory === "All") return allPhotos
-    return allPhotos.filter(
-      (img) => img.categories?.name === activeCategory
-    )
+    return allPhotos.filter((img) => img.categories?.name === activeCategory)
   }, [activeCategory, allPhotos])
 
   const handleImageClick = useCallback((index: number) => {
@@ -61,7 +63,6 @@ export default function GalleryPage() {
       <ScrollProgress />
       <Navbar />
 
-      {/* Page header */}
       <div className="pt-32 pb-8">
         <SectionHeader
           title="Gallery"
@@ -71,19 +72,31 @@ export default function GalleryPage() {
 
       {/* Filters */}
       <div className="mx-auto max-w-7xl px-6 pb-8">
-        <CategoryFilter
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
+        {loading ? (
+          <div className="flex justify-center gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-8 w-20 bg-muted animate-pulse rounded-full" />
+            ))}
+          </div>
+        ) : (
+          <CategoryFilter
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+            categories={categories}
+          />
+        )}
       </div>
 
-      {/* Gallery Grid */}
       <Section className="pt-4">
         {loading ? (
-          <div className="flex items-center justify-center py-32">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground animate-pulse">
-              Loading...
-            </p>
+          <div className="masonry-grid">
+            {[300, 400, 250, 350, 300, 450, 280, 320, 380].map((h, i) => (
+              <div
+                key={i}
+                className="animate-pulse bg-muted"
+                style={{ height: h }}
+              />
+            ))}
           </div>
         ) : filteredImages.length === 0 ? (
           <div className="flex items-center justify-center py-32">
@@ -99,7 +112,6 @@ export default function GalleryPage() {
         )}
       </Section>
 
-      {/* Lightbox */}
       <LightboxModal
         images={filteredImages}
         currentIndex={lightboxIndex}

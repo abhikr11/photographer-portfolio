@@ -24,7 +24,7 @@ export function Footer() {
             <Link href="/" className="flex items-center gap-2">
               <Camera className="h-5 w-5 text-gold" />
               <span className="font-serif text-xl tracking-wide text-foreground">
-                Expolre With Frames
+                Explore With Frames
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
