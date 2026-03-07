@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
-import { Menu, Camera, Instagram } from "lucide-react"
+import { Menu, Instagram } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -44,14 +45,25 @@ export function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-gold" />
-          <span className="font-serif text-xl tracking-wider">
-            Explore <span className="text-gold">With Frames</span>
-          </span>
+          <Image
+            src="/logo.png"
+            alt="Explore With Frames"
+            width={28}
+            height={28}
+            className="object-contain"
+          />
+          <div className="flex flex-col justify-center leading-none">
+            <span className="font-serif text-xl tracking-wider">
+              Explore <span className="text-gold">With Frames</span>
+            </span>
+            <span className="text-[9px] uppercase tracking-[0.2em] text-gold/60 mt-0.5">
+              — by Yash Joshi
+            </span>
+          </div>
         </Link>
 
         {/* Desktop nav */}
@@ -79,10 +91,8 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Separator */}
           <div className="mx-6 h-4 w-px bg-border" />
 
-          {/* Instagram Icon (Enhanced) */}
           <motion.a
             whileHover={{ scale: 1.15 }}
             transition={{ type: "spring", stiffness: 300 }}
@@ -104,10 +114,7 @@ export function Navbar() {
             </Button>
           </SheetTrigger>
 
-          <SheetContent
-            side="right"
-            className="w-72 bg-background border-border"
-          >
+          <SheetContent side="right" className="w-72 bg-background border-border">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
 
             <div className="flex flex-col gap-6 pt-8">
@@ -116,10 +123,21 @@ export function Navbar() {
                 className="flex items-center gap-2 px-4"
                 onClick={() => setOpen(false)}
               >
-                <Camera className="h-5 w-5 text-gold" />
-                <span className="font-serif text-xl text-foreground">
-                  Explore With Frames
-                </span>
+                <Image
+                  src="/logo.png"
+                  alt="Explore With Frames"
+                  width={28}
+                  height={28}
+                  className="object-contain"
+                />
+                <div className="flex flex-col justify-center leading-none">
+                  <span className="font-serif text-xl text-foreground">
+                    Explore With Frames
+                  </span>
+                  <span className="text-[9px] uppercase tracking-[0.2em] text-gold/60 mt-0.5">
+                    — by Yash Joshi
+                  </span>
+                </div>
               </Link>
 
               <div className="flex flex-col gap-1">
@@ -139,14 +157,12 @@ export function Navbar() {
                 ))}
               </div>
 
-              {/* Separator in mobile */}
               <div className="mx-4 my-2 h-px bg-border" />
 
-              {/* Instagram Mobile (Enhanced) */}
               <motion.a
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                href="https://instagram.com/yourusername"
+                href="https://instagram.com/explorewithframes"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 text-muted-foreground hover:text-gold transition-colors duration-300"

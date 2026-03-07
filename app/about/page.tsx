@@ -23,7 +23,7 @@ export default function AboutPage() {
       <Navbar />
 
       <div className="pt-32 pb-8">
-        <SectionHeader title="About" subtitle="The story behind the lens." />
+        <SectionHeader title="About" subtitle="Stories Through the Lens." />
       </div>
 
       {/* Bio section */}
@@ -59,31 +59,35 @@ export default function AboutPage() {
               The Photographer
             </p>
             <h2 className="font-serif text-3xl tracking-tight text-foreground md:text-4xl text-balance">
-              Alex Morgan
+              Yash Joshi
             </h2>
             <div className="flex flex-col gap-4 text-muted-foreground leading-relaxed">
               <p>
-                Based in New York with a passion for storytelling through
-                imagery, I have spent over five years refining my craft across
-                diverse genres of photography. From the intimate moments of a
-                wedding day to the vast landscapes of distant travels, I seek to
-                find beauty in the authentic.
+                Based in Delhi NCR, I am a professional photographer dedicated to capturing 
+                powerful visuals that tell meaningful stories. With experience across news media, 
+                product photography, and large-scale events, my work focuses on documenting moments 
+                with authenticity, precision, and impact.
               </p>
               <p>
-                My approach is rooted in natural light and genuine emotion. I
-                believe the best photographs are not posed but discovered in the
-                spaces between moments, where real life unfolds in its most
-                compelling form.
+                My background includes working in fast-paced news and media environments, where timing, 
+                awareness, and storytelling are essential. I have covered a wide range of assignments 
+                including defence exhibitions, political events, public gatherings, and official programs, 
+                capturing moments that hold social, cultural, and historical significance.
               </p>
               <p>
-                When not behind the camera, you can find me exploring new cities,
-                hunting for the perfect cup of coffee, or teaching workshops on
-                visual storytelling.
+                Alongside editorial and event coverage, I also specialize in product photography, creating 
+                clean and visually engaging imagery that highlights design, detail, and brand identity.
+              </p>
+              <p>
+                Through my lens, I aim to combine technical excellence with a strong narrative perspective, 
+                ensuring every photograph communicates emotion, context, and purpose. Whether documenting 
+                real-time events or producing refined commercial visuals, my goal is always to deliver 
+                imagery that is both impactful and timeless.
               </p>
             </div>
             <div className="flex gap-3 pt-2">
               <a
-                href="#"
+                href="https://instagram.com/explorewithframes"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-all hover:border-gold hover:text-gold"
                 aria-label="Instagram"
               >
