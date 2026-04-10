@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { google } from "googleapis"
 import { supabase, supabaseAdmin } from "@/lib/supabase"
-import { Readable } from "stream"
 
 async function getAuthenticatedClient() {
   const { data: tokenData } = await supabaseAdmin
@@ -62,53 +61,23 @@ export async function GET(request: Request) {
   return NextResponse.json(data)
 }
 
-// POST upload video to YouTube + save to Supabase
+// POST – Save video metadata after Render backend uploaded to YouTube
 export async function POST(request: Request) {
   const auth = await getAuthenticatedClient()
   if (!auth) {
     return NextResponse.json({ error: "Not authenticated with YouTube" }, { status: 401 })
   }
 
-  const formData = await request.formData()
-  const file = formData.get("file") as File
-  const title = formData.get("title") as string
-  const description = formData.get("description") as string
-  const playlist_id = formData.get("playlist_id") as string
-  const youtube_playlist_id = formData.get("youtube_playlist_id") as string
+  const { youtubeVideoId, title, description, playlist_id, youtube_playlist_id } = await request.json()
 
-  if (!file || !playlist_id) {
-    return NextResponse.json({ error: "File and playlist are required" }, { status: 400 })
+  if (!youtubeVideoId || !playlist_id) {
+    return NextResponse.json({ error: "Video ID and playlist are required" }, { status: 400 })
   }
 
   try {
     const youtube = google.youtube({ version: "v3", auth })
 
-    // Convert file to stream
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    const stream = Readable.from(buffer)
-
-    // Upload video to YouTube as unlisted
-    const ytResponse = await youtube.videos.insert({
-      part: ["snippet", "status"],
-      requestBody: {
-        snippet: {
-          title: title || file.name,
-          description: description ?? "",
-        },
-        status: {
-          privacyStatus: "unlisted",
-        },
-      },
-      media: {
-        mimeType: file.type,
-        body: stream,
-      },
-    })
-
-    const youtubeVideoId = ytResponse.data.id!
-
-    // Add video to playlist on YouTube
+    // Add video to playlist on YouTube if a playlist ID is provided
     if (youtube_playlist_id) {
       await youtube.playlistItems.insert({
         part: ["snippet"],
@@ -125,15 +94,15 @@ export async function POST(request: Request) {
     }
 
     // Save to Supabase
-    const thumbnailUrl = "https://img.youtube.com/vi/" + youtubeVideoId + "/maxresdefault.jpg"
+    const thumbnailUrl = `https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`
 
     const { data, error } = await supabaseAdmin
       .from("videos")
       .insert([{
         playlist_id,
         youtube_video_id: youtubeVideoId,
-        title: title || file.name,
-        description,
+        title: title || "Untitled",
+        description: description || "",
         thumbnail_url: thumbnailUrl,
       }])
       .select()
@@ -142,7 +111,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ message: "Video uploaded!", video: data[0] })
+    return NextResponse.json({ message: "Video saved!", video: data[0] })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
@@ -176,6 +145,7 @@ export async function DELETE(request: Request) {
   }
 }
 
+// PATCH – Update video metadata (title, description, playlist)
 export async function PATCH(request: Request) {
   const auth = await getAuthenticatedClient()
   if (!auth) {

@@ -189,45 +189,71 @@ export default function VideosManagementPage() {
     }
   }
 
+  // Upload to Render backend (direct file upload)
+  const uploadToRender = async (file: File, title: string, description: string, playlistId: string) => {
+    const formData = new FormData()
+    formData.append('video', file)
+    formData.append('title', title || file.name)
+    formData.append('description', description)
+    formData.append('playlist_id', playlistId)
+
+    const selectedPlaylist = playlists.find(p => p.id === playlistId)
+    if (selectedPlaylist?.youtube_playlist_id) {
+      formData.append('youtube_playlist_id', selectedPlaylist.youtube_playlist_id)
+    }
+
+    const xhr = new XMLHttpRequest()
+
+    return new Promise((resolve, reject) => {
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          setUploadProgress(Math.round((event.loaded / event.total) * 100))
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText)
+          resolve(data)
+        } else {
+          let errorMsg = `Upload failed (${xhr.status})`
+          try {
+            const errData = JSON.parse(xhr.responseText)
+            errorMsg = errData.error || errorMsg
+          } catch {}
+          reject(new Error(errorMsg))
+        }
+      })
+
+      xhr.addEventListener('error', () => reject(new Error('Network error – is your Render server running?')))
+
+      // ACTUAL RENDER BACKEND URL
+      xhr.open('POST', 'http://localhost:3001/upload')
+      xhr.send(formData)
+    })
+  }
+
   // Single upload
   const handleSingleUpload = async () => {
     if (!videoFile || !videoPlaylistId) {
       toast.error("Please select a video and playlist")
       return
     }
+
     setUploading(true)
-    setUploadProgress(10)
-    const selectedPlaylist = playlists.find((p) => p.id === videoPlaylistId)
-    const formData = new FormData()
-    formData.append("file", videoFile)
-    formData.append("title", videoTitle || videoFile.name)
-    formData.append("description", videoDesc)
-    formData.append("playlist_id", videoPlaylistId)
-    formData.append("youtube_playlist_id", selectedPlaylist?.youtube_playlist_id ?? "")
+    setUploadProgress(0)
+
     try {
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 85) { clearInterval(progressInterval); return 85 }
-          return prev + 5
-        })
-      }, 1000)
-      const res = await fetch("/api/youtube/videos", { method: "POST", body: formData })
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-      const data = await res.json()
-      if (res.ok) {
-        toast.success("Video uploaded to YouTube!")
-        setVideoFile(null)
-        setVideoTitle("")
-        setVideoDesc("")
-        setVideoPlaylistId("")
-        setUploadOpen(false)
-        fetchVideos()
-      } else {
-        toast.error(data.error ?? "Upload failed")
-      }
-    } catch {
-      toast.error("Upload failed")
+      await uploadToRender(videoFile, videoTitle, videoDesc, videoPlaylistId)
+      toast.success("Video uploaded and saved to YouTube!")
+      setVideoFile(null)
+      setVideoTitle("")
+      setVideoDesc("")
+      setVideoPlaylistId("")
+      setUploadOpen(false)
+      fetchVideos()
+    } catch (error: any) {
+      toast.error(error.message || "Upload failed")
     } finally {
       setUploading(false)
       setUploadProgress(0)
@@ -240,25 +266,28 @@ export default function VideosManagementPage() {
       toast.error("Please select videos and a playlist")
       return
     }
+
     setUploading(true)
-    const selectedPlaylist = playlists.find((p) => p.id === bulkPlaylistId)
     let uploaded = 0
+    let failed = 0
+
     for (const file of bulkFiles) {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("title", file.name)
-      formData.append("description", "")
-      formData.append("playlist_id", bulkPlaylistId)
-      formData.append("youtube_playlist_id", selectedPlaylist?.youtube_playlist_id ?? "")
       try {
-        await fetch("/api/youtube/videos", { method: "POST", body: formData })
+        await uploadToRender(file, file.name, "", bulkPlaylistId)
         uploaded++
         setUploadProgress(Math.round((uploaded / bulkFiles.length) * 100))
-      } catch {
-        toast.error("Failed to upload " + file.name)
+      } catch (error) {
+        failed++
+        console.error(`Failed to upload ${file.name}:`, error)
       }
     }
-    toast.success(uploaded + " video" + (uploaded > 1 ? "s" : "") + " uploaded!")
+
+    if (failed > 0) {
+      toast.warning(`${uploaded} uploaded, ${failed} failed`)
+    } else {
+      toast.success(`Successfully uploaded ${uploaded} video${uploaded > 1 ? "s" : ""}!`)
+    }
+
     setBulkFiles([])
     setBulkPlaylistId("")
     setUploadOpen(false)
@@ -568,7 +597,7 @@ export default function VideosManagementPage() {
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Upload Video</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Video will be uploaded to YouTube as unlisted.
+              Your video will be sent to our secure server and then published to YouTube.
             </DialogDescription>
           </DialogHeader>
 
@@ -614,14 +643,14 @@ export default function VideosManagementPage() {
                   <p className="text-sm text-muted-foreground">
                     {videoFile ? videoFile.name : "Drop your video here or click to browse"}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground/60">MP4, MOV, AVI up to 256MB</p>
+                  <p className="mt-1 text-xs text-muted-foreground/60">Any video format, up to 1GB</p>
                 </>
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
                     {bulkFiles.length > 0 ? bulkFiles.length + " videos selected" : "Drop multiple videos or click to browse"}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground/60">Select multiple video files at once</p>
+                  <p className="mt-1 text-xs text-muted-foreground/60">Select multiple video files (max 1GB each)</p>
                 </>
               )}
             </div>
@@ -647,10 +676,13 @@ export default function VideosManagementPage() {
             {uploading && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Uploading to YouTube...</span>
+                  <span>Uploading to server...</span>
                   <span>{uploadProgress}%</span>
                 </div>
                 <Progress value={uploadProgress} className="h-1" />
+                <p className="text-xs text-center text-muted-foreground/70">
+                  Please don't close this window. Large files may take several minutes.
+                </p>
               </div>
             )}
 
@@ -692,7 +724,7 @@ export default function VideosManagementPage() {
               </div>
             )}
 
-            {/* Bulk fields — only playlist */}
+            {/* Bulk fields */}
             {uploadMode === "bulk" && (
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground">Playlist</Label>
@@ -715,10 +747,10 @@ export default function VideosManagementPage() {
               onClick={uploadMode === "single" ? handleSingleUpload : handleBulkUpload}
             >
               {uploading
-                ? "Uploading..."
+                ? `Uploading... ${uploadProgress}%`
                 : uploadMode === "bulk"
                 ? "Upload " + (bulkFiles.length > 0 ? bulkFiles.length + " Videos" : "Videos")
-                : "Upload to YouTube"}
+                : "Upload to Server"}
             </Button>
           </div>
         </DialogContent>
