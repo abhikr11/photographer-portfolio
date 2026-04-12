@@ -52,9 +52,10 @@ export function Navbar() {
           <Image
             src="/logo.png"
             alt="Explore With Frames"
-            width={28}
-            height={28}
-            className="object-contain"
+            width={120}
+            height={120}
+            priority
+            className="h-10 w-auto object-contain"
           />
           <div className="flex flex-col justify-center leading-none">
             <span className="font-serif text-xl tracking-wider">
@@ -126,9 +127,10 @@ export function Navbar() {
                 <Image
                   src="/logo.png"
                   alt="Explore With Frames"
-                  width={28}
-                  height={28}
-                  className="object-contain"
+                  width={120}
+                  height={120}
+                  priority
+                  className="h-10 w-auto object-contain"
                 />
                 <div className="flex flex-col justify-center leading-none">
                   <span className="font-serif text-xl text-foreground">

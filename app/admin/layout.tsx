@@ -32,7 +32,6 @@ const navItems = [
   { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Images", href: "/admin/dashboard/images", icon: ImageIcon },
   { title: "Videos", href: "/admin/dashboard/videos", icon: Video },
-  { title: "Categories", href: "/admin/dashboard/categories", icon: FolderOpen },
   { title: "Projects", href: "/admin/dashboard/projects", icon: FolderOpen },
   { title: "Settings", href: "/admin/dashboard/settings", icon: Settings },
 ]

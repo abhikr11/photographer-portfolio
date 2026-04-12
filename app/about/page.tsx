@@ -106,7 +106,7 @@ export default function AboutPage() {
           >
             <div className="relative aspect-[3/4] overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=800&h=1067&fit=crop"
+                src="/dp_image.jpg"
                 alt="Portrait of Yash Joshi"
                 fill
                 className="object-cover"

@@ -34,10 +34,12 @@ export function CategoryFilter({
           <button
             key={category}
             onClick={() => onCategoryChange(category)}
-            className={"px-5 py-1.5 text-xs uppercase tracking-widest transition-colors border " +
-              (activeCategory === category
-                ? "bg-gold text-background border-gold"
-                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30")}
+            className={cn(
+              "px-5 py-1.5 text-xs uppercase tracking-widest transition-all duration-300 border rounded-full",
+              activeCategory === category
+                ? "bg-gradient-to-r from-amber-500 via-gold to-amber-500 text-background border-transparent shadow-md"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 bg-transparent"
+            )}
           >
             {category}
           </button>

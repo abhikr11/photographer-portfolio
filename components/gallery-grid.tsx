@@ -23,11 +23,12 @@ export type GalleryImage = {
 type GalleryGridProps = {
   images: GalleryImage[]
   onImageClick: (index: number) => void
+  eagerFirstImages?: number   // number of first images to load eagerly (fix LCP)
 }
 
-export function GalleryGrid({ images = [], onImageClick }: GalleryGridProps) {
+export function GalleryGrid({ images = [], onImageClick, eagerFirstImages = 3 }: GalleryGridProps) {
   return (
-    <div className="masonry-grid">
+    <div className="columns-1 gap-4 sm:columns-2 md:columns-3 lg:columns-4">
       <AnimatePresence mode="popLayout">
         {images.map((image, index) => (
           <motion.div
@@ -37,19 +38,19 @@ export function GalleryGrid({ images = [], onImageClick }: GalleryGridProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.3) }}
-            className="group cursor-pointer overflow-hidden"
+            className="group cursor-pointer overflow-hidden break-inside-avoid mb-4"
             onClick={() => onImageClick(index)}
           >
-            <div className="relative overflow-hidden">
+            <div className="relative overflow-hidden rounded-lg">
               <Image
                 src={image.cloudinary_url}
                 alt={image.title ?? "Gallery image"}
                 width={image.width}
                 height={image.height}
-                className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                loading={index < 6 ? "eager" : "lazy"}
-                priority={index < 3}
+                loading={index < eagerFirstImages ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : undefined}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
               <div className="absolute inset-x-0 bottom-0 translate-y-4 p-5 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">

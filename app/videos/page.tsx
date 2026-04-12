@@ -94,10 +94,11 @@ export default function VideosPage() {
             <div className="flex flex-wrap justify-center gap-2">
               <button
                 onClick={() => setActivePlaylist("all")}
-                className={"px-5 py-1.5 text-xs uppercase tracking-widest transition-colors border " +
-                  (activePlaylist === "all"
-                    ? "bg-gold text-background border-gold"
-                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30")}
+                className={`px-5 py-1.5 text-xs uppercase tracking-widest transition-all duration-300 border rounded-full ${
+                  activePlaylist === "all"
+                    ? "bg-gradient-to-r from-amber-500 via-gold to-amber-500 text-background border-transparent shadow-md"
+                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 bg-transparent"
+                }`}
               >
                 All
               </button>
@@ -105,10 +106,11 @@ export default function VideosPage() {
                 <button
                   key={playlist.id}
                   onClick={() => setActivePlaylist(playlist.id)}
-                  className={"px-5 py-1.5 text-xs uppercase tracking-widest transition-colors border " +
-                    (activePlaylist === playlist.id
-                      ? "bg-gold text-background border-gold"
-                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30")}
+                  className={`px-5 py-1.5 text-xs uppercase tracking-widest transition-all duration-300 border rounded-full ${
+                    activePlaylist === playlist.id
+                      ? "bg-gradient-to-r from-amber-500 via-gold to-amber-500 text-background border-transparent shadow-md"
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 bg-transparent"
+                  }`}
                 >
                   {playlist.name}
                 </button>

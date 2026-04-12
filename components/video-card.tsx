@@ -1,7 +1,8 @@
 "use client"
 
 import { Play, X } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
+import { useState } from "react"
 
 type Video = {
   id: string
@@ -65,46 +66,78 @@ type VideoModalProps = {
 }
 
 export function VideoModal({ video, isOpen, onClose }: VideoModalProps) {
-  if (!isOpen || !video) return null
+  const [isLoading, setIsLoading] = useState(true)
+  const [iframeKey, setIframeKey] = useState(0)
+
+  // Reset loading state when video changes
+  const handleVideoChange = () => {
+    setIsLoading(true)
+    setIframeKey(prev => prev + 1)
+  }
+
+  if (!video) return null
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-background/95 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <button
-        className="absolute top-4 right-4 z-10 p-2 text-foreground transition-colors hover:text-gold"
-        onClick={onClose}
-        aria-label="Close video"
-      >
-        <X className="h-6 w-6" />
-      </button>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md"
+          onClick={onClose}
+        >
+          <button
+            className="absolute top-4 right-4 z-10 p-2 text-white transition-colors hover:text-gold"
+            onClick={onClose}
+            aria-label="Close video"
+          >
+            <X className="h-6 w-6" />
+          </button>
 
-      <div
-        className="w-full max-w-4xl px-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative aspect-video w-full overflow-hidden">
-          <iframe
-            src={video.videoUrl + "?autoplay=1"}
-            title={video.title}
-            className="absolute inset-0 h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-        <div className="mt-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-gold">
-            {video.category}
-          </p>
-          <p className="mt-1 font-serif text-xl text-foreground">
-            {video.title}
-          </p>
-        </div>
-      </div>
-    </motion.div>
+          <div
+            className="relative w-full max-w-5xl px-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Video container */}
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+              {/* Loading spinner */}
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+                </div>
+              )}
+              
+              {/* YouTube iframe with autoplay and preload */}
+              <iframe
+                key={iframeKey}
+                src={`${video.videoUrl}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+                title={video.title}
+                className="absolute inset-0 h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setIsLoading(false)}
+                loading="eager"
+              />
+            </div>
+            
+            {/* Video info */}
+            <div className="mt-4 text-center">
+              <p className="text-xs uppercase tracking-widest text-gold">
+                {video.category}
+              </p>
+              <p className="mt-1 font-serif text-xl text-white">
+                {video.title}
+              </p>
+              {video.description && (
+                <p className="mt-2 text-sm text-white/80 max-w-2xl mx-auto">
+                  {video.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
