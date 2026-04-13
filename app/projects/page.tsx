@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, X } from "lucide-react"
+import { ArrowRight, X, Play } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -17,6 +17,15 @@ type ProjectImage = {
   order_index: number
 }
 
+type ProjectVideo = {
+  id: string
+  youtube_video_id: string
+  title: string
+  description: string
+  thumbnail_url: string
+  order_index: number
+}
+
 type Project = {
   id: string
   title: string
@@ -25,6 +34,7 @@ type Project = {
   date: string
   cover_image: string
   project_images: ProjectImage[]
+  project_videos?: ProjectVideo[]
 }
 
 function ProjectCard({
@@ -52,6 +62,8 @@ function ProjectCard({
           fill
           className="object-cover transition-transform duration-700 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          loading={index < 3 ? "eager" : "lazy"}
+          fetchPriority={index === 0 ? "high" : undefined}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
         <div className="absolute inset-x-0 bottom-0 translate-y-4 p-6 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
@@ -83,6 +95,23 @@ function ProjectDetail({
   project: Project
   onClose: () => void
 }) {
+  const [videos, setVideos] = useState<ProjectVideo[]>(project.project_videos || [])
+
+  // Optionally fetch videos if not included in project object
+  useEffect(() => {
+    if (!project.project_videos && project.id) {
+      fetch(`/api/projects/videos?project_id=${project.id}`)
+        .then((res) => res.json())
+        .then((data) => setVideos(Array.isArray(data) ? data : []))
+        .catch(() => setVideos([]))
+    }
+  }, [project.id, project.project_videos])
+
+  const allMedia = [
+    ...(project.project_images || []).map((img) => ({ type: "image", data: img })),
+    ...(videos || []).map((vid) => ({ type: "video", data: vid })),
+  ].sort((a, b) => (a.data.order_index || 0) - (b.data.order_index || 0))
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -106,7 +135,8 @@ function ProjectDetail({
           fill
           className="object-cover"
           sizes="100vw"
-          priority
+          loading="eager"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-4xl px-6 pb-12">
@@ -125,32 +155,57 @@ function ProjectDetail({
         </p>
 
         <div className="mt-12 flex flex-col gap-8">
-          {project.project_images
-            .sort((a, b) => a.order_index - b.order_index)
-            .map((img, i) => (
-              <motion.div
-                key={img.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="overflow-hidden"
-              >
-                <Image
-                  src={img.url}
-                  alt={img.caption || "Project image"}
-                  width={1200}
-                  height={800}
-                  className="w-full object-cover"
-                  sizes="(max-width: 1024px) 100vw, 896px"
-                />
-                {img.caption && (
-                  <p className="mt-3 text-center text-sm italic text-muted-foreground">
-                    {img.caption}
-                  </p>
-                )}
-              </motion.div>
-            ))}
+          {allMedia.map((item, idx) => (
+            <motion.div
+              key={item.type === "image" ? (item.data as ProjectImage).id : (item.data as ProjectVideo).id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="overflow-hidden"
+            >
+              {item.type === "image" ? (
+                <>
+                  <Image
+                    src={(item.data as ProjectImage).url}
+                    alt={(item.data as ProjectImage).caption || "Project image"}
+                    width={1200}
+                    height={800}
+                    className="w-full object-cover"
+                    sizes="(max-width: 1024px) 100vw, 896px"
+                    loading="lazy"
+                  />
+                  {(item.data as ProjectImage).caption && (
+                    <p className="mt-3 text-center text-sm italic text-muted-foreground">
+                      {(item.data as ProjectImage).caption}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative aspect-video overflow-hidden rounded-lg">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${(item.data as ProjectVideo).youtube_video_id}`}
+                      title={(item.data as ProjectVideo).title || "Project video"}
+                      className="absolute inset-0 h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                  {(item.data as ProjectVideo).title && (
+                    <p className="text-center text-sm font-medium text-foreground">
+                      {(item.data as ProjectVideo).title}
+                    </p>
+                  )}
+                  {(item.data as ProjectVideo).description && (
+                    <p className="text-center text-sm text-muted-foreground">
+                      {(item.data as ProjectVideo).description}
+                    </p>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          ))}
         </div>
 
         <div className="mt-16 text-center">
@@ -176,7 +231,12 @@ export default function ProjectsPage() {
     fetch("/api/projects")
       .then((r) => r.json())
       .then((data) => {
-        setProjects(Array.isArray(data) ? data : [])
+        // Ensure each project has project_videos array (even if empty)
+        const projectsWithVideos = (Array.isArray(data) ? data : []).map((p) => ({
+          ...p,
+          project_videos: p.project_videos || [],
+        }))
+        setProjects(projectsWithVideos)
         setLoading(false)
       })
       .catch(() => setLoading(false))
